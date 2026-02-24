@@ -1,0 +1,64 @@
+.drawing-canvas-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+}
+
+.drawing-canvas-container h2 {
+    margin: 0;
+    color: #333;
+    font-size: 24px;
+}
+
+.drawing-canvas {
+    border: 3px solid #333;
+    border-radius: 8px;
+    cursor: crosshair;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: white;
+}
+
+.canvas-controls {
+    display: flex;
+    gap: 15px;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-clear {
+    background-color: #f44336;
+    color: white;
+}
+
+.btn-clear:hover {
+    background-color: #da190b;
+}
+
+.btn-predict {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.btn-predict:hover {
+    background-color: #45a049;
+}
