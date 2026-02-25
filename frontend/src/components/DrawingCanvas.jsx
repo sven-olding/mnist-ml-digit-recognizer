@@ -80,9 +80,6 @@ const DrawingCanvas = () => {
     try {
       const imageData = getImageData();
       
-      // Remove the data:image/png;base64, prefix
-      const base64Data = imageData.split(',')[1];
-      
       // Create form data to send to the backend
       const formData = new FormData();
       formData.append('image_data', imageData);

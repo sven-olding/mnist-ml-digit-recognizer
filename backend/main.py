@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from model_loader import model_loader
-from image_processor import preprocess_image, preprocess_base64_image
+from image_processor import preprocess_image, preprocess_base64_image, visualize_preprocessed_image
 
 
 # Lifespan context manager for startup/shutdown events
@@ -62,6 +62,15 @@ class PredictionResponse(BaseModel):
     prediction: int
     confidence: float
     probabilities: list[float]
+
+
+class DebugPredictionResponse(BaseModel):
+    """Response model for debug prediction endpoint."""
+
+    prediction: int
+    confidence: float
+    probabilities: list[float]
+    preprocessed_image: str  # Base64 encoded image showing what the model sees
 
 
 class HealthResponse(BaseModel):
@@ -130,15 +139,85 @@ async def predict_digit(
 
     # Make prediction
     try:
-        predictions = model.predict(img_array, verbose=0)
-        probabilities = predictions[0].tolist()
+        # Model outputs logits, need to apply softmax to get probabilities
+        logits = model.predict(img_array, verbose=0)
+
+        # Apply softmax to convert logits to probabilities
+        import tensorflow as tf
+
+        probabilities = tf.nn.softmax(logits[0]).numpy().tolist()
 
         # Get the predicted digit (highest probability)
-        predicted_digit = int(np.argmax(predictions[0]))
+        predicted_digit = int(np.argmax(logits[0]))
         confidence = float(probabilities[predicted_digit])
 
         return PredictionResponse(
             prediction=predicted_digit, confidence=confidence, probabilities=probabilities
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error during prediction: {str(e)}")
+
+
+@app.post("/predict/debug", response_model=DebugPredictionResponse, tags=["Prediction"])
+async def predict_digit_debug(
+    image: Union[UploadFile, None] = File(None), image_data: Union[str, None] = Form(None)
+):
+    """
+    Predict the digit and return the preprocessed image for debugging.
+
+    Args:
+        image: Image file (PNG, JPEG, etc.)
+        image_data: Base64 encoded image string (alternative to file upload)
+
+    Returns:
+        DebugPredictionResponse with prediction, confidence, probabilities, and preprocessed image
+    """
+    # Check if model is loaded
+    model = model_loader.get_model()
+    if model is None:
+        raise HTTPException(
+            status_code=503, detail="Model not loaded. Please ensure the model file exists."
+        )
+
+    # Get preprocessed image
+    try:
+        if image is not None:
+            # Process uploaded file
+            contents = await image.read()
+            img_array = preprocess_image(contents)
+        elif image_data is not None:
+            # Process base64 string
+            img_array = preprocess_base64_image(image_data)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Either 'image' file or 'image_data' string must be provided",
+            )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error processing image: {str(e)}")
+
+    # Make prediction
+    try:
+        # Model outputs logits, need to apply softmax to get probabilities
+        logits = model.predict(img_array, verbose=0)
+
+        # Apply softmax to convert logits to probabilities
+        import tensorflow as tf
+
+        probabilities = tf.nn.softmax(logits[0]).numpy().tolist()
+
+        # Get the predicted digit (highest probability)
+        predicted_digit = int(np.argmax(logits[0]))
+        confidence = float(probabilities[predicted_digit])
+
+        # Get preprocessed image for debugging
+        preprocessed_img_base64 = visualize_preprocessed_image(img_array)
+
+        return DebugPredictionResponse(
+            prediction=predicted_digit,
+            confidence=confidence,
+            probabilities=probabilities,
+            preprocessed_image=preprocessed_img_base64,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during prediction: {str(e)}")

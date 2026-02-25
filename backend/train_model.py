@@ -30,6 +30,7 @@ model = tf.keras.models.Sequential(
     [
         tf.keras.layers.Flatten(input_shape=(28, 28, 1)),
         tf.keras.layers.Dense(128, activation="relu"),
+        tf.keras.layers.Dropout(0.2),
         tf.keras.layers.Dense(10),
     ]
 )
@@ -39,10 +40,21 @@ model.compile(
     metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
 )
 
-model.fit(
-    ds_train,
-    epochs=6,
-    validation_data=ds_test,
-)
+# Add callbacks for better training
+callbacks = [
+    tf.keras.callbacks.EarlyStopping(
+        monitor="val_sparse_categorical_accuracy", patience=3, restore_best_weights=True, verbose=1
+    ),
+    tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=2, verbose=1),
+]
+
+model.fit(ds_train, epochs=20, validation_data=ds_test, callbacks=callbacks, verbose=1)
 
 model.save("./models/mnist_model.keras")
+
+print("\n" + "=" * 60)
+print("Model training complete!")
+print("=" * 60)
+print(f"Model saved to: ./models/mnist_model.keras")
+print("\nTo test the model, restart the backend server.")
+print("=" * 60)

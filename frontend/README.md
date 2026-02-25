@@ -64,9 +64,6 @@ The `DrawingCanvas` component provides:
 
 ## Next Steps
 
-- [ ] Connect to backend API for digit prediction
-- [ ] Display prediction results
-- [ ] Add confidence scores visualization
 - [ ] Implement touch support for mobile devices
 - [ ] Add preprocessing to scale canvas to 28x28 pixels
 - [ ] Add prediction history
